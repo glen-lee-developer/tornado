@@ -1,0 +1,14 @@
+{
+  "type": "module",
+  "name": "project",
+  "version": "1.0.0",
+  "description": "Three JS Vanilla template",
+  "author": "Glen Lee",
+  "license": "ISC",
+  "dependencies": {
+    "three": "^0.150.1"
+  },
+  "devDependencies": {
+    "vite-plugin-glsl": "^1.1.2"
+  }
+}
