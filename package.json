@@ -6,9 +6,11 @@
   "author": "Glen Lee",
   "license": "ISC",
   "dependencies": {
+    "@types/three": "^0.158.1",
     "three": "^0.150.1"
   },
   "devDependencies": {
+    "typescript": "^5.2.2",
     "vite-plugin-glsl": "^1.1.2"
   }
 }
