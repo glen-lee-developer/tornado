@@ -1,71 +1,53 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-// import "./styles.css";
+import { createCamera } from "./camera";
+import { addLights } from "./lights";
+import { setupControls } from "./controls";
+import { setupResize } from "./resize";
 import vertexShader from "./shaders/vertex.glsl";
 import fragmentShader from "./shaders/fragment.glsl";
 
-function init() {
+function init(): void {
   const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-  let height = window.innerHeight;
-  let width = window.innerWidth;
-  window.addEventListener("resize", resize);
-
   const scene = new THREE.Scene();
+  const camera = createCamera();
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 
-  //  Camera
-  const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-  camera.position.z = 1;
+  addLights(scene);
+  const controls = setupControls(camera, renderer);
+  setupResize(camera, renderer);
 
-  //  Renderer
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    alpha: true,
-  });
-  renderer.setSize(width, height);
+  const testMesh = createTestMesh();
+  scene.add(testMesh);
 
-  //  Lights
-  const directionalLight = new THREE.DirectionalLight("gray");
-  directionalLight.position.set(1, 1, 1);
-  scene.add(directionalLight);
-  const ambientLight = new THREE.AmbientLight("gray");
-  scene.add(ambientLight);
+  animate(renderer, scene, camera, testMesh);
+}
 
-  //  Controls
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.set(0, 0, 0);
-  controls.update();
-
-  //  Resize
-  function resize() {
-    height = window.innerHeight;
-    width = window.innerWidth;
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height);
-  }
-  resize();
-
-  //  Test Mesh
+//  Test Mesh
+function createTestMesh(): THREE.Points {
   const geometry = new THREE.PlaneGeometry(1, 1, 50, 50);
   const material = new THREE.ShaderMaterial({
     uniforms: {
       time: { value: 0 },
     },
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
+    vertexShader,
+    fragmentShader,
   });
-  const testMesh = new THREE.Points(geometry, material);
-  scene.add(testMesh);
-
-  //  Animate
-  const animate = () => {
-    let time = 0.05;
-
-    requestAnimationFrame(animate);
-    testMesh.material.uniforms.time.value += time;
-
-    renderer.render(scene, camera);
-  };
-  animate();
+  return new THREE.Points(geometry, material);
 }
+
+//  Animate
+function animate(
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.PerspectiveCamera,
+  testMesh: THREE.Points
+): void {
+  function animateFrame(): void {
+    requestAnimationFrame(animateFrame);
+    (testMesh.material as THREE.ShaderMaterial).uniforms.time.value += 0.01;
+    renderer.render(scene, camera);
+  }
+  animateFrame();
+}
+
 init();
