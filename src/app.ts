@@ -39,7 +39,7 @@ function createTestMesh(): THREE.Points {
 function animate(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
-  camera: THREE.PerspectiveCamera,
+  camera: THREE.OrthographicCamera | THREE.PerspectiveCamera,
   testMesh: THREE.Points
 ): void {
   function animateFrame(): void {
