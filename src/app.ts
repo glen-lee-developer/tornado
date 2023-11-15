@@ -16,14 +16,8 @@ function init(): void {
   const controls = setupControls(camera, renderer);
   setupResize(camera, renderer);
 
-  const testMesh = createTestMesh();
-  scene.add(testMesh);
+  //  Test Mesh
 
-  animate(renderer, scene, camera, testMesh);
-}
-
-//  Test Mesh
-function createTestMesh(): THREE.Points {
   const geometry = new THREE.PlaneGeometry(1, 1, 50, 50);
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -32,22 +26,15 @@ function createTestMesh(): THREE.Points {
     vertexShader,
     fragmentShader,
   });
-  return new THREE.Points(geometry, material);
-}
+  const myMesh = new THREE.Mesh(geometry, material);
+  scene.add(myMesh);
 
-//  Animate
-function animate(
-  renderer: THREE.WebGLRenderer,
-  scene: THREE.Scene,
-  camera: THREE.OrthographicCamera | THREE.PerspectiveCamera,
-  testMesh: THREE.Points
-): void {
+  //  Animate
   function animateFrame(): void {
     requestAnimationFrame(animateFrame);
-    (testMesh.material as THREE.ShaderMaterial).uniforms.time.value += 0.01;
+    (myMesh.material as THREE.ShaderMaterial).uniforms.time.value += 0.01;
     renderer.render(scene, camera);
   }
   animateFrame();
 }
-
 init();
