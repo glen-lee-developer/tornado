@@ -17,24 +17,80 @@ function init(): void {
   setupResize(camera, renderer);
 
   //  Test Mesh
+  const numInstances = 10000;
+  const geometry = new THREE.IcosahedronGeometry();
+  const material = new THREE.MeshPhongMaterial();
+  const myMesh = new THREE.InstancedMesh(geometry, material, numInstances);
 
-  const geometry = new THREE.PlaneGeometry(1, 1, 50, 50);
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      time: { value: 0 },
-    },
-    vertexShader,
-    fragmentShader,
-  });
-  const myMesh = new THREE.Mesh(geometry, material);
+  const dummyObj = new THREE.Object3D();
+
+  // const randPos = () => Math.random() * 40 - 20;
+  // for (let i = 0; i < numInstances; i++) {
+  //   dummyObj.position.set(randPos(), randPos(), randPos());
+
+  //   dummyObj.scale.setScalar(Math.random());
+
+  //   dummyObj.updateMatrix();
+  //   myMesh.setMatrixAt(i, dummyObj.matrix);
+  //   myMesh.setColorAt(i, new THREE.Color(Math.random() * 0xffffff));
+  // }
+  const minHeight = -50; // Adjust the minimum height of the tornado
+  const maxHeight = 50; // Adjust the maximum height of the tornado
+
+  for (let i = 0; i < numInstances; i++) {
+    const theta = (i / numInstances) * Math.PI * 2; // Angle based on instance index
+
+    // Calculate the height within the specified range
+    const y = Math.random() * (maxHeight - minHeight) + minHeight;
+
+    // Calculate radial distance based on height
+    const innerRadius = 5 + ((y - minHeight) / (maxHeight - minHeight)) * 5; // Adjust as needed
+    const outerRadius = 20 + ((y - minHeight) / (maxHeight - minHeight)) * 15; // Adjust as needed
+
+    const radialDistance =
+      Math.random() * (outerRadius - innerRadius) + innerRadius;
+
+    const x = radialDistance * Math.cos(theta);
+    const z = radialDistance * Math.sin(theta);
+
+    dummyObj.position.set(x, y, z);
+
+    // Do other modifications as needed, e.g., scaling or rotations
+
+    dummyObj.updateMatrix();
+    myMesh.setMatrixAt(i, dummyObj.matrix);
+    myMesh.setColorAt(i, new THREE.Color(Math.random() * 0xffffff));
+  }
+
   scene.add(myMesh);
 
+  const matrix = new THREE.Matrix4();
   //  Animate
-  function animateFrame(): void {
-    requestAnimationFrame(animateFrame);
-    (myMesh.material as THREE.ShaderMaterial).uniforms.time.value += 0.01;
+  console.log(myMesh);
+  function animate(time: number): void {
+    // for (let i = 0; i < numInstances; i++) {
+    //   myMesh.getMatrixAt(i, matrix);
+    //   matrix.decompose(
+    //     dummyObj.position,
+    //     new THREE.Quaternion().setFromEuler(dummyObj.rotation), //  Changing to quaternion to avoid gimbal lock
+    //     dummyObj.scale
+    //   );
+
+    //   dummyObj.rotation.set(
+    //     ((i / 10000) * time) / 1000,
+    //     ((i / 10000) * time) / 500,
+    //     ((i / 10000) * time) / 1200
+    //   );
+    //   myMesh.instanceMatrix.needsUpdate = true;
+
+    //   dummyObj.updateMatrix();
+    //   myMesh.setMatrixAt(i, dummyObj.matrix);
+    //   myMesh.setColorAt(i, new THREE.Color(Math.random() * 0xffffff));
+    // }
+
+    // myMesh.rotation.y = time / 1000;
     renderer.render(scene, camera);
   }
-  animateFrame();
+  renderer.setAnimationLoop(animate);
 }
 init();
