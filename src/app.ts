@@ -4,6 +4,13 @@ import { createCamera } from "./camera";
 import { addLights } from "./lights";
 import { setupControls } from "./controls";
 import { setupResize } from "./resize";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils";
+
+interface ModelData {
+  geometry: THREE.BufferGeometry;
+  materials: THREE.Material[];
+}
 
 function init(): void {
   const gui = new GUI();
@@ -12,15 +19,17 @@ function init(): void {
   const camera = createCamera();
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
 
+  const loader = new GLTFLoader();
+
   addLights(scene);
   const controls = setupControls(camera, renderer);
   setupResize(camera, renderer);
 
   let params = {
     numInstances: 5000,
-    height: 250, // Adjust the maximum height of the tornado
-    innerRadius: 10, // Adjust the inner radius of the tornado
-    outerRadius: 5, // Adjust the outer radius of the tornado
+    height: 250,
+    innerRadius: 10,
+    outerRadius: 5,
     numHelix: 1,
     twistTightness: 1,
     yRandomness: 0,
@@ -37,21 +46,55 @@ function init(): void {
   gui.add(params, "zRandomness", 0, 200, 1).onFinishChange(generateTornado);
   gui.add(params, "yRandomness", 0, 200, 1).onFinishChange(generateTornado);
 
-  const geometry = new THREE.IcosahedronGeometry();
-  const material = new THREE.MeshPhongMaterial();
+  // Create a promise to handle the loading of the model
+  const loadModel: Promise<ModelData> = new Promise((resolve, reject) => {
+    loader.load("../models/emojis.glb", (glb) => {
+      const emoji = glb.scene.getObjectByName(
+        "Emoji_1_Love_0"
+      ) as THREE.Object3D;
 
-  const dummyObj = new THREE.Object3D();
-  function generateTornado() {
-    // Clear existing helix meshes from the scene
-    scene.children.forEach((child) => {
-      if (child instanceof THREE.InstancedMesh) {
-        scene.remove(child);
+      if (emoji && emoji.children.length > 0) {
+        // Extract geometries and materials from the children
+        const geometries: THREE.BufferGeometry[] = [];
+        const materials: THREE.Material[] = [];
+        emoji.children.forEach((child) => {
+          if (child instanceof THREE.Mesh) {
+            geometries.push(child.geometry);
+            materials.push(child.material);
+          }
+        });
+
+        const mergedGeometry =
+          BufferGeometryUtils.mergeBufferGeometries(geometries);
+
+        // Resolve the promise with the loaded model data
+        resolve({
+          geometry: mergedGeometry,
+          materials: materials,
+        });
+      } else {
+        reject(new Error("Emoji object or its children not found"));
       }
     });
+  });
 
+  loadModel
+    .then((modelData: ModelData) => {
+      generateTornado(modelData.geometry, modelData.materials);
+    })
+    .catch((error: Error) => {
+      console.error(error.message);
+    });
+
+  const dummyObj = new THREE.Object3D();
+
+  function generateTornado(
+    loadedGeometry: THREE.BufferGeometry,
+    loadedMaterials: THREE.Material[]
+  ) {
     const helixMesh = new THREE.InstancedMesh(
-      geometry,
-      material,
+      loadedGeometry,
+      loadedMaterials[2],
       params.numInstances
     );
     const rotationIncrement = (Math.PI * 2) / params.numHelix;
@@ -88,19 +131,21 @@ function init(): void {
       scene.add(clonedHelixMesh);
     }
   }
-  generateTornado();
 
   const matrix = new THREE.Matrix4();
-  //  Animate
+
+  // Animate
   function animate(time: number): void {
-    scene.children.forEach((child) => {
-      if (child instanceof THREE.InstancedMesh) {
-        child.rotation.y = child.rotation.y + time / 2000000;
-      }
-    });
+    // scene.children.forEach((child) => {
+    //   if (child instanceof THREE.InstancedMesh) {
+    //     child.rotation.y = child.rotation.y + time / 2000000;
+    //   }
+    // });
 
     renderer.render(scene, camera);
   }
+
   renderer.setAnimationLoop(animate);
 }
+
 init();
